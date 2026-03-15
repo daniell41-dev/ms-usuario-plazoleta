@@ -1,0 +1,13 @@
+services:
+  postgres:
+    # Imagen oficial de PostgreSQL versión 16 desde Docker Hub
+    image: 'postgres:16'
+    # Variables de entorno que PostgreSQL usa al inicializarse
+    environment:
+      POSTGRES_DB: ms_usuario_db       # Nombre de la base de datos que se creará
+      POSTGRES_USER: usuario           # Usuario administrador de la BD
+      POSTGRES_PASSWORD: password      # Contraseña del usuario (solo para desarrollo local)
+    # Mapeo de puertos: puerto 5432 del contenedor → puerto 5432 de tu máquina
+    # Formato: "puerto_host:puerto_contenedor"
+    ports:
+      - '5432:5432'
