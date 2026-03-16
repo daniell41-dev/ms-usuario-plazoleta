@@ -36,6 +36,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	// Driver de PostgreSQL: el conector específico para hablar con Postgres
 	runtimeOnly 'org.postgresql:postgresql'
+	// Validation: anotaciones para validar datos de entrada (@NotBlank, @Email, @Size, etc.)
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
