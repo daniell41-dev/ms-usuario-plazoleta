@@ -72,48 +72,92 @@ infrastructure/
 
 **Base de datos:** PostgreSQL en `localhost:5432/ms_usuario_db` (usuario: `usuario`, password: `password`)
 
-## Tarea pendiente: exponer el rol de un usuario
+## Tarea pendiente anterior: exponer el rol de un usuario ✅ COMPLETA
 
-El microservicio hermano `ms-plazoleta` (que corre en el puerto 8081) necesita validar que el
-`propietarioId` enviado al crear un restaurante corresponda a un usuario con rol `PROPIETARIO`.
-Para eso, `ms-plazoleta` hará una llamada HTTP a `ms-usuario`.
+`GET /usuarios/{id}/rol` → `{ "rol": "PROPIETARIO" }` — ya implementado y funcionando.
 
-**Endpoint a implementar:**
+---
 
+## Tarea actual: HU-5 — Autenticación JWT
+
+### Contexto del sistema
+- `ms-usuario` corre en `localhost:8080`
+- `ms-plazoleta` corre en `localhost:8081`
+- Los roles existentes son: `ADMINISTRADOR`, `PROPIETARIO`, `EMPLEADO`, `CLIENTE`
+- El usuario **ADMINISTRADOR** se inserta directamente en BD con contraseña BCrypt (no hay endpoint para crearlo)
+
+### Decisiones de arquitectura tomadas
+- El login (`POST /auth/login`) vive en `ms-usuario` — él tiene correo, clave y rol
+- Al hacer login se genera un **JWT token** que incluye: `id`, `correo`, `rol`
+- `ms-plazoleta` valida el JWT en cada request **sin llamar a ms-usuario** — el token ya trae el rol
+- Contraseñas almacenadas con BCrypt (ya implementado en `UsuarioUseCase`)
+- No se implementa recuperación de contraseña en esta versión
+
+### Endpoints a proteger (criterios de aceptación HU-5)
+**En ms-usuario:**
+- `POST /usuarios/propietario` → solo `ADMINISTRADOR`
+- `POST /usuarios/empleado` → solo `PROPIETARIO` *(aún no existe este endpoint)*
+
+**En ms-plazoleta:**
+- `POST /restaurantes` → solo `ADMINISTRADOR`
+- `POST /restaurantes/{id}/platos` → solo `PROPIETARIO` (y dueño del restaurante)
+- `PATCH /platos/{id}` → solo `PROPIETARIO` (y dueño del restaurante)
+
+### Dependencia JWT a agregar en build.gradle
+```groovy
+implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 ```
-GET /usuarios/{id}/rol
-```
 
-Respuesta esperada (HTTP 200):
-```json
-{ "rol": "PROPIETARIO" }
-```
+### Archivos a crear/modificar en ms-usuario (en orden):
 
-Si el usuario no existe → lanzar excepción y devolver HTTP 404.
+1. **`build.gradle`** — agregar dependencias JWT (ver arriba)
 
-### Archivos que hay que crear/modificar (en orden):
-
-1. **`UsuarioRolResponseDto.java`** — nuevo DTO de respuesta con un campo `String rol`
-   - Va en `infrastructure/input/rest/dto/`
-
-2. **`IUsuarioPersistencePort.java`** — agregar método `obtenerPorId(Long id): Optional<Usuario>`
-   - El puerto out necesita poder buscar un usuario por su ID
-
-3. **`UsuarioJpaAdapter.java`** — implementar el nuevo método usando `IUsuarioRepository.findById()`
-
-4. **`IUsuarioServicePort.java`** — agregar método `obtenerRolUsuario(Long id): String`
-   - El puerto in expone la consulta al exterior
-
-5. **`UsuarioUseCase.java`** — implementar `obtenerRolUsuario()`:
-   - Llama al puerto out para buscar el usuario
-   - Si no existe → lanzar excepción de dominio (por ejemplo `UsuarioNoEncontradoException`)
-   - Si existe → devolver `usuario.getRol().name()`
-
-6. **`UsuarioRestController.java`** — agregar el endpoint GET:
-   ```java
-   @GetMapping("/{id}/rol")
-   public ResponseEntity<UsuarioRolResponseDto> obtenerRol(@PathVariable Long id) { ... }
+2. **`application.properties`** — agregar:
+   ```properties
+   jwt.secret=clave-secreta-muy-larga-para-firmar-el-token
+   jwt.expiration=86400000
    ```
+
+3. **`JwtTokenProvider.java`** — en `infrastructure/config/security/`:
+   - Genera el token JWT con `id`, `correo`, `rol` como claims
+   - Valida un token JWT
+   - Extrae el correo del token
+
+4. **`LoginRequestDto.java`** — en `infrastructure/input/rest/dto/`:
+   - Campos: `correo` (@Email @NotBlank), `clave` (@NotBlank)
+
+5. **`LoginResponseDto.java`** — en `infrastructure/input/rest/dto/`:
+   - Campo: `String token`
+
+6. **`IUsuarioServicePort.java`** — agregar método:
+   ```java
+   String login(String correo, String clave);
+   ```
+
+7. **`IUsuarioPersistencePort.java`** — ya tiene `buscarPorCorreo` — verificar que devuelve `Optional<Usuario>`
+
+8. **`UsuarioUseCase.java`** — implementar `login(String correo, String clave)`:
+   - Buscar usuario por correo → si no existe, excepción
+   - Validar clave con `passwordEncoder.matches(clave, usuario.getClave())`
+   - Si clave incorrecta → excepción `CredencialesInvalidasException`
+   - Devolver el token generado por `JwtTokenProvider`
+
+9. **`CredencialesInvalidasException.java`** — en `domain/exception/`
+
+10. **`AuthRestController.java`** — en `infrastructure/input/rest/`:
+    - `POST /auth/login` con `@RequestBody LoginRequestDto` → devuelve `LoginResponseDto` con el token
+
+11. **`JwtAuthenticationFilter.java`** — en `infrastructure/config/security/`:
+    - Filtro que intercepta cada request
+    - Extrae el token del header `Authorization: Bearer <token>`
+    - Valida el token y setea el contexto de seguridad de Spring
+
+12. **`SecurityConfig.java`** — reemplazar la configuración temporal:
+    - Permitir sin autenticación: `POST /auth/login`, `GET /usuarios/{id}/rol`
+    - Proteger `POST /usuarios/propietario` → solo `ADMINISTRADOR`
+    - Agregar el filtro JWT a la cadena de seguridad
 
 ## Reglas del proyecto
 
