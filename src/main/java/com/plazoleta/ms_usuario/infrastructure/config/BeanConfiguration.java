@@ -3,6 +3,7 @@ package com.plazoleta.ms_usuario.infrastructure.config;
 import com.plazoleta.ms_usuario.application.usecase.UsuarioUseCase;
 import com.plazoleta.ms_usuario.domain.ports.in.IUsuarioServicePort;
 import com.plazoleta.ms_usuario.domain.ports.out.IUsuarioPersistencePort;
+import com.plazoleta.ms_usuario.infrastructure.config.security.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -42,8 +43,9 @@ public class BeanConfiguration {
     @Bean
     public IUsuarioServicePort usuarioServicePort(
             IUsuarioPersistencePort usuarioPersistencePort,
-            PasswordEncoder passwordEncoder) {
-        return new UsuarioUseCase(usuarioPersistencePort, passwordEncoder);
+            PasswordEncoder passwordEncoder,
+            JwtTokenProvider jwtTokenProvider) {
+        return new UsuarioUseCase(usuarioPersistencePort, passwordEncoder, jwtTokenProvider);
     }
 
     /**

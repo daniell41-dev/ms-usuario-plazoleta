@@ -32,4 +32,6 @@ public interface IUsuarioServicePort {
 
     String obtenerRolUsuario(Long id);
 
+    String login(String correo, String clave);
+
 }

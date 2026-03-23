@@ -1,5 +1,6 @@
 package com.plazoleta.ms_usuario.application.usecase;
 
+import com.plazoleta.ms_usuario.domain.exception.CredencialesInvalidasException;
 import com.plazoleta.ms_usuario.domain.exception.MenorDeEdadException;
 import com.plazoleta.ms_usuario.domain.exception.UsuarioNoEncontradoException;
 import com.plazoleta.ms_usuario.domain.exception.UsuarioYaExisteException;
@@ -7,6 +8,7 @@ import com.plazoleta.ms_usuario.domain.model.Rol;
 import com.plazoleta.ms_usuario.domain.model.Usuario;
 import com.plazoleta.ms_usuario.domain.ports.in.IUsuarioServicePort;
 import com.plazoleta.ms_usuario.domain.ports.out.IUsuarioPersistencePort;
+import com.plazoleta.ms_usuario.infrastructure.config.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -41,11 +43,14 @@ public class UsuarioUseCase implements IUsuarioServicePort {
     // facilita enormemente los tests unitarios (puedes pasar mocks directamente).
     private final IUsuarioPersistencePort usuarioPersistencePort;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public UsuarioUseCase(IUsuarioPersistencePort usuarioPersistencePort,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          JwtTokenProvider jwtTokenProvider) {
         this.usuarioPersistencePort = usuarioPersistencePort;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Override
@@ -88,5 +93,17 @@ public class UsuarioUseCase implements IUsuarioServicePort {
                 new UsuarioNoEncontradoException("No se encontro el usuario con este id"));
 
         return usuario.getRol().name();
+    }
+
+    @Override
+    public String login(String correo, String clave) {
+        Usuario usuario = usuarioPersistencePort.buscarPorCorreo(correo)
+                .orElseThrow(CredencialesInvalidasException::new);
+
+        if (!passwordEncoder.matches(clave, usuario.getClave())) {
+            throw new CredencialesInvalidasException();
+        }
+
+        return jwtTokenProvider.generarToken(usuario.getId(), usuario.getCorreo(), usuario.getRol().name());
     }
 }
