@@ -54,6 +54,23 @@ public class UsuarioUseCase implements IUsuarioServicePort {
     }
 
     @Override
+    public void guardarEmpleado(Usuario usuario) {
+
+        // Regla 1: No puede existir otro usuario con el mismo correo
+        usuarioPersistencePort.buscarPorCorreo(usuario.getCorreo())
+                .ifPresent(u -> { throw new UsuarioYaExisteException(); });
+
+        // Regla 2: Encriptar la clave ANTES de persistir
+        usuario.setClave(passwordEncoder.encode(usuario.getClave()));
+
+        // Regla 3: El rol siempre es EMPLEADO, sin importar el idRol que llegó en el request
+        usuario.setRol(Rol.EMPLEADO);
+
+        // Regla 4: Persistir
+        usuarioPersistencePort.guardarUsuario(usuario);
+    }
+
+    @Override
     public void guardarPropietario(Usuario usuario) {
 
         // Regla 1: El usuario debe ser mayor de edad

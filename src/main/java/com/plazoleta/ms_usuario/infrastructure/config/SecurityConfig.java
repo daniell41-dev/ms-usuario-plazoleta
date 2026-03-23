@@ -47,6 +47,7 @@ public class SecurityConfig {
 
                 // Endpoints protegidos — requieren rol específico
                 .requestMatchers(HttpMethod.POST, "/usuarios/propietario").hasAuthority("ADMINISTRADOR")
+                .requestMatchers(HttpMethod.POST, "/usuarios/empleado").hasAuthority("PROPIETARIO")
 
                 // Cualquier otro endpoint requiere estar autenticado
                 .anyRequest().authenticated()

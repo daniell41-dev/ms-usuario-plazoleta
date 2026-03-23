@@ -3,6 +3,7 @@ package com.plazoleta.ms_usuario.infrastructure.input.rest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import com.plazoleta.ms_usuario.domain.ports.in.IUsuarioServicePort;
+import com.plazoleta.ms_usuario.infrastructure.input.rest.dto.EmpleadoRequestDto;
 import com.plazoleta.ms_usuario.infrastructure.input.rest.dto.UsuarioRequestDto;
 import com.plazoleta.ms_usuario.infrastructure.input.rest.dto.UsuarioRolResponseDto;
 import com.plazoleta.ms_usuario.infrastructure.input.rest.mapper.IUsuarioRequestMapper;
@@ -57,6 +58,14 @@ public class UsuarioRestController {
     public ResponseEntity<Void> guardarPropietario(@Valid @RequestBody UsuarioRequestDto usuarioRequestDto) {
         usuarioServicePort.guardarPropietario(
                 usuarioRequestMapper.toDomain(usuarioRequestDto)
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/empleado")
+    public ResponseEntity<Void> guardarEmpleado(@Valid @RequestBody EmpleadoRequestDto empleadoRequestDto) {
+        usuarioServicePort.guardarEmpleado(
+                usuarioRequestMapper.toEmpleadoDomain(empleadoRequestDto)
         );
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

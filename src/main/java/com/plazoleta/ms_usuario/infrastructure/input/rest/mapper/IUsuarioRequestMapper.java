@@ -1,6 +1,7 @@
 package com.plazoleta.ms_usuario.infrastructure.input.rest.mapper;
 
 import com.plazoleta.ms_usuario.domain.model.Usuario;
+import com.plazoleta.ms_usuario.infrastructure.input.rest.dto.EmpleadoRequestDto;
 import com.plazoleta.ms_usuario.infrastructure.input.rest.dto.UsuarioRequestDto;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +31,20 @@ public class IUsuarioRequestMapper {
                 dto.getCorreo(),
                 dto.getClave(),
                 null                           // rol: el caso de uso lo asigna
+        );
+    }
+
+    public Usuario toEmpleadoDomain(EmpleadoRequestDto dto) {
+        return new Usuario(
+                null,                          // id: la BD lo genera
+                dto.getNombre(),
+                dto.getApellido(),
+                dto.getDocumentoDeIdentidad(),
+                dto.getCelular(),
+                null,                          // fechaNacimiento: no aplica para empleados
+                dto.getCorreo(),
+                dto.getClave(),
+                null                           // rol: el caso de uso siempre asigna EMPLEADO
         );
     }
 }
