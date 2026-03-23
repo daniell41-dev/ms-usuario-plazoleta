@@ -78,86 +78,33 @@ infrastructure/
 
 ---
 
-## Tarea actual: HU-5 — Autenticación JWT
+## HU-5 — Autenticación JWT ✅ COMPLETA (incluyendo logout)
 
 ### Contexto del sistema
 - `ms-usuario` corre en `localhost:8080`
 - `ms-plazoleta` corre en `localhost:8081`
-- Los roles existentes son: `ADMINISTRADOR`, `PROPIETARIO`, `EMPLEADO`, `CLIENTE`
-- El usuario **ADMINISTRADOR** se inserta directamente en BD con contraseña BCrypt (no hay endpoint para crearlo)
+- Roles existentes: `ADMINISTRADOR`, `PROPIETARIO`, `EMPLEADO`, `CLIENTE`
+- El **ADMINISTRADOR** se inserta directamente en BD con contraseña BCrypt (no hay endpoint para crearlo)
 
-### Decisiones de arquitectura tomadas
-- El login (`POST /auth/login`) vive en `ms-usuario` — él tiene correo, clave y rol
-- Al hacer login se genera un **JWT token** que incluye: `id`, `correo`, `rol`
-- `ms-plazoleta` valida el JWT en cada request **sin llamar a ms-usuario** — el token ya trae el rol
-- Contraseñas almacenadas con BCrypt (ya implementado en `UsuarioUseCase`)
-- No se implementa recuperación de contraseña en esta versión
+### Decisiones de arquitectura
+- JWT incluye claims: `id`, `correo`, `rol`
+- `ms-plazoleta` valida el JWT **sin llamar a ms-usuario** — el token ya trae el rol
+- Contraseñas con BCrypt
+- Logout usa blacklist en memoria (`ConcurrentHashMap`) — se pierde al reiniciar (Redis para producción)
 
-### Endpoints a proteger (criterios de aceptación HU-5)
-**En ms-usuario:**
+### Endpoints implementados
+- `POST /auth/login` → público → devuelve `{ "token": "eyJ..." }`
+- `POST /auth/logout` → requiere token → invalida en blacklist → 200 OK
 - `POST /usuarios/propietario` → solo `ADMINISTRADOR`
-- `POST /usuarios/empleado` → solo `PROPIETARIO` *(aún no existe este endpoint)*
+- `GET /usuarios/{id}/rol` → público
 
-**En ms-plazoleta:**
+### Pendiente en ms-usuario
+- `POST /usuarios/empleado` → solo `PROPIETARIO` *(aún no existe)*
+
+### Pendiente en ms-plazoleta
 - `POST /restaurantes` → solo `ADMINISTRADOR`
-- `POST /restaurantes/{id}/platos` → solo `PROPIETARIO` (y dueño del restaurante)
-- `PATCH /platos/{id}` → solo `PROPIETARIO` (y dueño del restaurante)
-
-### Dependencia JWT a agregar en build.gradle
-```groovy
-implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-```
-
-### Archivos a crear/modificar en ms-usuario (en orden):
-
-1. **`build.gradle`** — agregar dependencias JWT (ver arriba)
-
-2. **`application.properties`** — agregar:
-   ```properties
-   jwt.secret=clave-secreta-muy-larga-para-firmar-el-token
-   jwt.expiration=86400000
-   ```
-
-3. **`JwtTokenProvider.java`** — en `infrastructure/config/security/`:
-   - Genera el token JWT con `id`, `correo`, `rol` como claims
-   - Valida un token JWT
-   - Extrae el correo del token
-
-4. **`LoginRequestDto.java`** — en `infrastructure/input/rest/dto/`:
-   - Campos: `correo` (@Email @NotBlank), `clave` (@NotBlank)
-
-5. **`LoginResponseDto.java`** — en `infrastructure/input/rest/dto/`:
-   - Campo: `String token`
-
-6. **`IUsuarioServicePort.java`** — agregar método:
-   ```java
-   String login(String correo, String clave);
-   ```
-
-7. **`IUsuarioPersistencePort.java`** — ya tiene `buscarPorCorreo` — verificar que devuelve `Optional<Usuario>`
-
-8. **`UsuarioUseCase.java`** — implementar `login(String correo, String clave)`:
-   - Buscar usuario por correo → si no existe, excepción
-   - Validar clave con `passwordEncoder.matches(clave, usuario.getClave())`
-   - Si clave incorrecta → excepción `CredencialesInvalidasException`
-   - Devolver el token generado por `JwtTokenProvider`
-
-9. **`CredencialesInvalidasException.java`** — en `domain/exception/`
-
-10. **`AuthRestController.java`** — en `infrastructure/input/rest/`:
-    - `POST /auth/login` con `@RequestBody LoginRequestDto` → devuelve `LoginResponseDto` con el token
-
-11. **`JwtAuthenticationFilter.java`** — en `infrastructure/config/security/`:
-    - Filtro que intercepta cada request
-    - Extrae el token del header `Authorization: Bearer <token>`
-    - Valida el token y setea el contexto de seguridad de Spring
-
-12. **`SecurityConfig.java`** — reemplazar la configuración temporal:
-    - Permitir sin autenticación: `POST /auth/login`, `GET /usuarios/{id}/rol`
-    - Proteger `POST /usuarios/propietario` → solo `ADMINISTRADOR`
-    - Agregar el filtro JWT a la cadena de seguridad
+- `POST /restaurantes/{id}/platos` → solo `PROPIETARIO`
+- `PATCH /platos/{id}` → solo `PROPIETARIO`
 
 ## Reglas del proyecto
 
