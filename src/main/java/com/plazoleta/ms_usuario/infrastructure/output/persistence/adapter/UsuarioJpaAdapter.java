@@ -60,4 +60,11 @@ public class UsuarioJpaAdapter implements IUsuarioPersistencePort {
         return usuarioRepository.findById(id)
                 .map(usuarioEntityMapper::toUsuario);
     }
+
+    @Override
+    public boolean existePorDocumento(String documentoDeIdentidad) {
+        // Delega directamente al repositorio — no necesita mapper porque
+        // no estamos convirtiendo entidades, solo verificando existencia.
+        return usuarioRepository.existsByDocumentoDeIdentidad(documentoDeIdentidad);
+    }
 }

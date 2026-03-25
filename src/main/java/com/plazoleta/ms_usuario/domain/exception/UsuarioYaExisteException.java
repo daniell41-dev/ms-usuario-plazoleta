@@ -16,7 +16,7 @@ package com.plazoleta.ms_usuario.domain.exception;
  * ni de base de datos, es una violación de una regla del sistema.
  */
 public class UsuarioYaExisteException extends RuntimeException {
-    public UsuarioYaExisteException() {
-        super("Ya existe un usuario registrado con ese correo electrónico");
+    public UsuarioYaExisteException(String mensaje) {
+        super(mensaje);
     }
 }

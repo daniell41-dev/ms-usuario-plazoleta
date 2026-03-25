@@ -33,4 +33,13 @@ public interface IUsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
      * Devuelve Optional para forzar el manejo explícito del caso "no existe".
      */
     Optional<UsuarioEntity> findByCorreo(String correo);
+
+    /**
+     * Verifica si existe un usuario con el documento de identidad dado.
+     * Spring Data genera: SELECT COUNT(*) > 0 FROM usuarios WHERE documento_de_identidad = :documentoDeIdentidad
+     *
+     * Devuelve boolean directamente — más eficiente que traer toda la entidad
+     * cuando solo necesitamos saber si existe o no.
+     */
+    boolean existsByDocumentoDeIdentidad(String documentoDeIdentidad);
 }

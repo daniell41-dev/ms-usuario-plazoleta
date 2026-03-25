@@ -32,6 +32,8 @@ public interface IUsuarioServicePort {
 
     void guardarEmpleado(Usuario usuario);
 
+    void guardarCliente(Usuario usuario);
+
     String obtenerRolUsuario(Long id);
 
     String login(String correo, String clave);

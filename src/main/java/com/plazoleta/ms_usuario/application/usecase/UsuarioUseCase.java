@@ -54,19 +54,46 @@ public class UsuarioUseCase implements IUsuarioServicePort {
     }
 
     @Override
+    public void guardarCliente(Usuario usuario) {
+
+        // Regla 1: No puede existir otro usuario con el mismo correo
+        usuarioPersistencePort.buscarPorCorreo(usuario.getCorreo())
+                .ifPresent(u -> { throw new UsuarioYaExisteException("Ya existe un usuario registrado con ese correo electrónico"); });
+
+        // Regla 2: No puede existir otro usuario con el mismo documento de identidad
+        if (usuarioPersistencePort.existePorDocumento(usuario.getDocumentoDeIdentidad())) {
+            throw new UsuarioYaExisteException("Ya existe un usuario registrado con ese documento de identidad");
+        }
+
+        // Regla 3: Encriptar la clave ANTES de persistir
+        usuario.setClave(passwordEncoder.encode(usuario.getClave()));
+
+        // Regla 4: El rol siempre es CLIENTE, sin importar el idRol que llegó en el request
+        usuario.setRol(Rol.CLIENTE);
+
+        // Regla 5: Persistir
+        usuarioPersistencePort.guardarUsuario(usuario);
+    }
+
+    @Override
     public void guardarEmpleado(Usuario usuario) {
 
         // Regla 1: No puede existir otro usuario con el mismo correo
         usuarioPersistencePort.buscarPorCorreo(usuario.getCorreo())
-                .ifPresent(u -> { throw new UsuarioYaExisteException(); });
+                .ifPresent(u -> { throw new UsuarioYaExisteException("Ya existe un usuario registrado con ese correo electrónico"); });
 
-        // Regla 2: Encriptar la clave ANTES de persistir
+        // Regla 2: No puede existir otro usuario con el mismo documento de identidad
+        if (usuarioPersistencePort.existePorDocumento(usuario.getDocumentoDeIdentidad())) {
+            throw new UsuarioYaExisteException("Ya existe un usuario registrado con ese documento de identidad");
+        }
+
+        // Regla 3: Encriptar la clave ANTES de persistir
         usuario.setClave(passwordEncoder.encode(usuario.getClave()));
 
-        // Regla 3: El rol siempre es EMPLEADO, sin importar el idRol que llegó en el request
+        // Regla 4: El rol siempre es EMPLEADO, sin importar el idRol que llegó en el request
         usuario.setRol(Rol.EMPLEADO);
 
-        // Regla 4: Persistir
+        // Regla 5: Persistir
         usuarioPersistencePort.guardarUsuario(usuario);
     }
 
@@ -78,17 +105,20 @@ public class UsuarioUseCase implements IUsuarioServicePort {
 
         // Regla 2: No puede existir otro usuario con el mismo correo
         usuarioPersistencePort.buscarPorCorreo(usuario.getCorreo())
-                .ifPresent(u -> { throw new UsuarioYaExisteException(); });
+                .ifPresent(u -> { throw new UsuarioYaExisteException("Ya existe un usuario registrado con ese correo electrónico"); });
 
-        // Regla 3: Encriptar la clave ANTES de persistir
-        // Nunca se guarda una clave en texto plano en la BD
+        // Regla 3: No puede existir otro usuario con el mismo documento de identidad
+        if (usuarioPersistencePort.existePorDocumento(usuario.getDocumentoDeIdentidad())) {
+            throw new UsuarioYaExisteException("Ya existe un usuario registrado con ese documento de identidad");
+        }
+
+        // Regla 4: Encriptar la clave ANTES de persistir
         usuario.setClave(passwordEncoder.encode(usuario.getClave()));
 
-        // Regla 4: El rol siempre es PROPIETARIO, sin importar lo que venga del request
-        // Esto es importante: no dejamos que el cliente HTTP decida el rol
+        // Regla 5: El rol siempre es PROPIETARIO, sin importar lo que venga del request
         usuario.setRol(Rol.PROPIETARIO);
 
-        // Regla 5: Persistir
+        // Regla 6: Persistir
         usuarioPersistencePort.guardarUsuario(usuario);
     }
 

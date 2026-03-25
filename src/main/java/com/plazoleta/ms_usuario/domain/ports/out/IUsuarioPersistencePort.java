@@ -42,4 +42,12 @@ public interface IUsuarioPersistencePort {
      * @return Optional con el id del Usuario si existe
      */
     Optional<Usuario> obtenerPorId(Long id);
+
+    /**
+     * Verifica si ya existe un usuario con el documento de identidad dado.
+     * Se usa para evitar duplicados antes de crear un nuevo usuario.
+     * @param documentoDeIdentidad El documento a verificar.
+     * @return true si ya existe, false si no.
+     */
+    boolean existePorDocumento(String documentoDeIdentidad);
 }
