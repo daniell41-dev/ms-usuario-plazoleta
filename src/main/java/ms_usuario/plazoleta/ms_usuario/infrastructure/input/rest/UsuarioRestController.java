@@ -36,22 +36,6 @@ public class UsuarioRestController {
     private final IUsuarioServicePort usuarioServicePort;
     private final IUsuarioRequestMapper usuarioRequestMapper;
 
-    /**
-     * POST /usuarios/propietario
-     *
-     * Crea un nuevo usuario con rol PROPIETARIO.
-     *
-     * @Valid → activa las validaciones del DTO (las anotaciones @NotBlank,
-     * @Email, etc.). Si alguna falla, Spring lanza MethodArgumentNotValidException
-     * ANTES de llegar al caso de uso — el request ni siquiera entra a la lógica.
-     *
-     * @RequestBody → le dice a Spring que el parámetro viene del body del HTTP
-     * request en formato JSON, y que debe deserializarlo al DTO.
-     *
-     * ResponseEntity<Void> → la respuesta no tiene body, solo un código HTTP.
-     * HttpStatus.CREATED (201) → indica que un recurso fue creado exitosamente.
-     * Es más semántico que 200 OK para operaciones de creación.
-     */
     @PostMapping("/propietario")
     public ResponseEntity<Void> guardarPropietario(@Valid @RequestBody UsuarioRequestDto usuarioRequestDto) {
         usuarioServicePort.guardarPropietario(

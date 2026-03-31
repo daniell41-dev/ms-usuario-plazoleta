@@ -54,7 +54,7 @@ public class UsuarioRequestDto {
      * La expresión regular \d+ significa "uno o más dígitos (0-9)".
      */
     @NotBlank(message = "El documento de identidad es obligatorio")
-    @Pattern(regexp = "\\d+", message = "El documento de identidad debe ser únicamente numérico")
+    @Pattern(regexp = ValidationPatterns.SOLO_DIGITOS, message = "El documento de identidad debe ser únicamente numérico")
     private String documentoDeIdentidad;
 
     /**
@@ -67,8 +67,8 @@ public class UsuarioRequestDto {
      *   $ → fin de la cadena
      */
     @NotBlank(message = "El celular es obligatorio")
-    @Size(max = 13, message = "El celular debe tener máximo 13 caracteres")
-    @Pattern(regexp = "^\\+?\\d{7,13}$", message = "El celular debe contener solo números y puede iniciar con +")
+    @Size(max = ValidationPatterns.LONGITUD_MAXIMA_CELULAR, message = "El celular debe tener máximo 13 caracteres")
+    @Pattern(regexp = ValidationPatterns.FORMATO_CELULAR, message = "El celular debe contener solo números y puede iniciar con +")
     private String celular;
 
     @NotNull(message = "La fecha de nacimiento es obligatoria")

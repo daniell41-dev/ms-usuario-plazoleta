@@ -2,6 +2,7 @@ package ms_usuario.plazoleta.ms_usuario.infrastructure.config;
 
 import ms_usuario.plazoleta.ms_usuario.application.usecase.UsuarioUseCase;
 import ms_usuario.plazoleta.ms_usuario.domain.ports.in.IUsuarioServicePort;
+import ms_usuario.plazoleta.ms_usuario.domain.ports.out.IClaveCodificadorPort;
 import ms_usuario.plazoleta.ms_usuario.domain.ports.out.IUsuarioPersistencePort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,8 +43,8 @@ public class BeanConfiguration {
     @Bean
     public IUsuarioServicePort usuarioServicePort(
             IUsuarioPersistencePort usuarioPersistencePort,
-            PasswordEncoder passwordEncoder) {
-        return new UsuarioUseCase(usuarioPersistencePort, passwordEncoder);
+            IClaveCodificadorPort claveCodificadorPort) {
+        return new UsuarioUseCase(usuarioPersistencePort, claveCodificadorPort);
     }
 
     /**

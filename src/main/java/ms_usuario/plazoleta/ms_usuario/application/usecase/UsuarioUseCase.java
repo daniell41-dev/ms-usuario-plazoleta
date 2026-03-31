@@ -1,15 +1,13 @@
 package ms_usuario.plazoleta.ms_usuario.application.usecase;
 
-import ms_usuario.plazoleta.ms_usuario.domain.exception.MenorDeEdadException;
+import ms_usuario.plazoleta.ms_usuario.domain.constants.UsuarioConstantes;
 import ms_usuario.plazoleta.ms_usuario.domain.exception.UsuarioYaExisteException;
 import ms_usuario.plazoleta.ms_usuario.domain.model.Rol;
 import ms_usuario.plazoleta.ms_usuario.domain.model.Usuario;
 import ms_usuario.plazoleta.ms_usuario.domain.ports.in.IUsuarioServicePort;
+import ms_usuario.plazoleta.ms_usuario.domain.ports.out.IClaveCodificadorPort;
 import ms_usuario.plazoleta.ms_usuario.domain.ports.out.IUsuarioPersistencePort;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.time.LocalDate;
-import java.time.Period;
+import ms_usuario.plazoleta.ms_usuario.domain.util.EdadUtil;
 
 /**
  * Caso de uso: Crear Propietario.
@@ -39,27 +37,27 @@ public class UsuarioUseCase implements IUsuarioServicePort {
     // ¿Por qué constructor? Porque hace las dependencias explícitas y
     // facilita enormemente los tests unitarios (puedes pasar mocks directamente).
     private final IUsuarioPersistencePort usuarioPersistencePort;
-    private final PasswordEncoder passwordEncoder;
+    private final IClaveCodificadorPort claveCodificadorPort;
 
     public UsuarioUseCase(IUsuarioPersistencePort usuarioPersistencePort,
-                          PasswordEncoder passwordEncoder) {
+                          IClaveCodificadorPort claveCodificadorPort) {
         this.usuarioPersistencePort = usuarioPersistencePort;
-        this.passwordEncoder = passwordEncoder;
+        this.claveCodificadorPort = claveCodificadorPort;
     }
 
     @Override
     public void guardarPropietario(Usuario usuario) {
 
         // Regla 1: El usuario debe ser mayor de edad
-        validarMayoriaDeEdad(usuario.getFechaNacimiento());
+        EdadUtil.validarMayoriaDeEdad(usuario.getFechaNacimiento(), UsuarioConstantes.EDAD_MINIMA_PROPIETARIO);
 
         // Regla 2: No puede existir otro usuario con el mismo correo
         usuarioPersistencePort.buscarPorCorreo(usuario.getCorreo())
-                .ifPresent(u -> { throw new UsuarioYaExisteException(); });
+                .ifPresent(usuarioEncontrado -> { throw new UsuarioYaExisteException(); });
 
         // Regla 3: Encriptar la clave ANTES de persistir
         // Nunca se guarda una clave en texto plano en la BD
-        usuario.setClave(passwordEncoder.encode(usuario.getClave()));
+        usuario.setClave(claveCodificadorPort.codificar(usuario.getClave()));
 
         // Regla 4: El rol siempre es PROPIETARIO, sin importar lo que venga del request
         // Esto es importante: no dejamos que el cliente HTTP decida el rol
@@ -67,17 +65,5 @@ public class UsuarioUseCase implements IUsuarioServicePort {
 
         // Regla 5: Persistir
         usuarioPersistencePort.guardarUsuario(usuario);
-    }
-
-    /**
-     * Valida que el usuario tenga al menos 18 años.
-     * Usamos Period.between para calcular la diferencia exacta entre fechas,
-     * considerando años bisiestos y meses con distinta cantidad de días.
-     */
-    private void validarMayoriaDeEdad(LocalDate fechaNacimiento) {
-        int edad = Period.between(fechaNacimiento, LocalDate.now()).getYears();
-        if (edad < 18) {
-            throw new MenorDeEdadException();
-        }
     }
 }
