@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 	id 'org.springframework.boot' version '4.0.3'
 	id 'io.spring.dependency-management' version '1.1.7'
 }
@@ -45,6 +46,65 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 }
 
+// Clases excluidas de la cobertura de Jacoco:
+// - Clases de arranque, configuración de Spring y seguridad (requieren contexto de aplicación)
+// - Modelos de dominio, puertos e interfaces (sin lógica propia)
+// - DTOs, entidades y repositorios (sin lógica de negocio)
+// - Mappers de persistencia e infraestructura de entrada
+def jacocoExclusions = [
+	'**/MsUsuarioApplication*',
+	'**/domain/model/**',
+	'**/domain/ports/**',
+	'**/domain/exception/**',
+	'**/domain/constants/**',
+	'**/infrastructure/config/BeanConfiguration*',
+	'**/infrastructure/config/SecurityConfig*',
+	'**/infrastructure/input/rest/dto/**',
+	'**/infrastructure/input/rest/mapper/**',
+	'**/infrastructure/input/rest/*RestController*',
+	'**/infrastructure/output/persistence/entity/**',
+	'**/infrastructure/output/persistence/mapper/**',
+	'**/infrastructure/output/persistence/repository/**',
+	'**/infrastructure/output/persistence/adapter/**',
+]
+
+jacoco {
+	toolVersion = "0.8.12"
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+	dependsOn test
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: jacocoExclusions)
+		}))
+	}
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+jacocoTestCoverageVerification {
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: jacocoExclusions)
+		}))
+	}
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.96
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn jacocoTestCoverageVerification
 }
