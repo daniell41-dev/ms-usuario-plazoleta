@@ -1,5 +1,6 @@
 package com.plazoleta.ms_usuario.infrastructure.input.rest;
 
+import com.plazoleta.ms_usuario.domain.constants.UsuarioConstantes;
 import com.plazoleta.ms_usuario.domain.ports.in.IUsuarioServicePort;
 import com.plazoleta.ms_usuario.infrastructure.config.security.TokenBlacklistService;
 import com.plazoleta.ms_usuario.infrastructure.input.rest.dto.LoginRequestDto;
@@ -32,7 +33,7 @@ public class AuthRestController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(UsuarioConstantes.BEARER_PREFIX.length());
         tokenBlacklistService.invalidar(token);
         return ResponseEntity.ok().build();
     }
