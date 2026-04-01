@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.0.3'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'ms-usuario.plazoleta'
@@ -45,6 +46,56 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 }
 
+def jacocoExclusions = [
+	'**/MsUsuarioApplication*',
+	'**/domain/model/**',
+	'**/domain/ports/**',
+	'**/domain/exception/**',
+	'**/domain/constants/**',
+	'**/infrastructure/config/BeanConfiguration*',
+	'**/infrastructure/config/SecurityConfig*',
+	'**/infrastructure/input/rest/dto/**',
+	'**/infrastructure/input/rest/mapper/**',
+	'**/infrastructure/input/rest/*RestController*',
+	'**/infrastructure/output/persistence/entity/**',
+	'**/infrastructure/output/persistence/mapper/**',
+	'**/infrastructure/output/persistence/repository/**',
+	'**/infrastructure/output/persistence/adapter/**',
+]
+
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+	dependsOn test
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: jacocoExclusions)
+		}))
+	}
+	reports {
+		xml.required = true
+		html.required = true
+	}
+}
+
+jacocoTestCoverageVerification {
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: jacocoExclusions)
+		}))
+	}
+	violationRules {
+		rule {
+			limit {
+				minimum = 0.96
+			}
+		}
+	}
+}
+
+tasks.named('check') {
+	dependsOn jacocoTestCoverageVerification
 }
