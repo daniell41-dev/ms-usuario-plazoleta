@@ -4,11 +4,12 @@ import com.plazoleta.ms_usuario.domain.exception.CredencialesInvalidasException;
 import com.plazoleta.ms_usuario.domain.exception.MenorDeEdadException;
 import com.plazoleta.ms_usuario.domain.exception.UsuarioNoEncontradoException;
 import com.plazoleta.ms_usuario.domain.exception.UsuarioYaExisteException;
+import com.plazoleta.ms_usuario.domain.constants.UsuarioConstantes;
 import com.plazoleta.ms_usuario.domain.model.Rol;
 import com.plazoleta.ms_usuario.domain.model.Usuario;
 import com.plazoleta.ms_usuario.domain.ports.in.IUsuarioServicePort;
+import com.plazoleta.ms_usuario.domain.ports.out.IJwtTokenPort;
 import com.plazoleta.ms_usuario.domain.ports.out.IUsuarioPersistencePort;
-import com.plazoleta.ms_usuario.infrastructure.config.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -43,14 +44,14 @@ public class UsuarioUseCase implements IUsuarioServicePort {
     // facilita enormemente los tests unitarios (puedes pasar mocks directamente).
     private final IUsuarioPersistencePort usuarioPersistencePort;
     private final PasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+    private final IJwtTokenPort jwtTokenPort;
 
     public UsuarioUseCase(IUsuarioPersistencePort usuarioPersistencePort,
                           PasswordEncoder passwordEncoder,
-                          JwtTokenProvider jwtTokenProvider) {
+                          IJwtTokenPort jwtTokenPort) {
         this.usuarioPersistencePort = usuarioPersistencePort;
         this.passwordEncoder = passwordEncoder;
-        this.jwtTokenProvider = jwtTokenProvider;
+        this.jwtTokenPort = jwtTokenPort;
     }
 
     @Override
@@ -129,7 +130,7 @@ public class UsuarioUseCase implements IUsuarioServicePort {
      */
     private void validarMayoriaDeEdad(LocalDate fechaNacimiento) {
         int edad = Period.between(fechaNacimiento, LocalDate.now()).getYears();
-        if (edad < 18) {
+        if (edad < UsuarioConstantes.EDAD_MINIMA) {
             throw new MenorDeEdadException();
         }
     }
@@ -151,6 +152,6 @@ public class UsuarioUseCase implements IUsuarioServicePort {
             throw new CredencialesInvalidasException();
         }
 
-        return jwtTokenProvider.generarToken(usuario.getId(), usuario.getCorreo(), usuario.getRol().name());
+        return jwtTokenPort.generarToken(usuario.getId(), usuario.getCorreo(), usuario.getRol().name());
     }
 }

@@ -1,5 +1,6 @@
 package com.plazoleta.ms_usuario.infrastructure.config.security;
 
+import com.plazoleta.ms_usuario.domain.constants.UsuarioConstantes;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,8 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7); // quita "Bearer "
+        if (header != null && header.startsWith(UsuarioConstantes.BEARER_PREFIX)) {
+            String token = header.substring(UsuarioConstantes.BEARER_PREFIX.length());
 
             if (!tokenBlacklistService.estaInvalidado(token) && jwtTokenProvider.validarToken(token)) {
                 String correo = jwtTokenProvider.extraerCorreo(token);

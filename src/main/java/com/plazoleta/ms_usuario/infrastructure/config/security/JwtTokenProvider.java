@@ -1,5 +1,6 @@
 package com.plazoleta.ms_usuario.infrastructure.config.security;
 
+import com.plazoleta.ms_usuario.domain.ports.out.IJwtTokenPort;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -11,7 +12,7 @@ import java.security.Key;
 import java.util.Date;
 
 @Component
-public class JwtTokenProvider {
+public class JwtTokenProvider implements IJwtTokenPort {
 
     @Value("${jwt.secret}")
     private String secret;
