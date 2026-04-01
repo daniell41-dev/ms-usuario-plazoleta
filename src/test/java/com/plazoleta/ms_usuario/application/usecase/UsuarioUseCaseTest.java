@@ -128,7 +128,7 @@ class UsuarioUseCaseTest {
         verify(usuarioPersistencePort, never()).guardarUsuario(any());
     }
 
-    // ─── guardarEmpleado: camino feliz ───────────────────────────────────────
+    // ─── guardarEmpleado ─────────────────────────────────────────────────────
 
     @Test
     void guardarEmpleado_cuandoTodosLosDatosSonValidos_guardaCorrectamente() {
@@ -164,7 +164,7 @@ class UsuarioUseCaseTest {
         verify(usuarioPersistencePort, never()).guardarUsuario(any());
     }
 
-    // ─── guardarCliente: camino feliz ────────────────────────────────────────
+    // ─── guardarCliente ──────────────────────────────────────────────────────
 
     @Test
     void guardarCliente_cuandoTodosLosDatosSonValidos_guardaCorrectamente() {
