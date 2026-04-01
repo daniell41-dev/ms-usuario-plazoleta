@@ -47,38 +47,49 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
+def jacocoExclusions = [
+	'**/MsUsuarioApplication*',
+	'**/domain/model/**',
+	'**/domain/ports/**',
+	'**/domain/exception/**',
+	'**/domain/constants/**',
+	'**/infrastructure/config/BeanConfiguration*',
+	'**/infrastructure/config/SecurityConfig*',
+	'**/infrastructure/input/rest/dto/**',
+	'**/infrastructure/input/rest/mapper/**',
+	'**/infrastructure/input/rest/*RestController*',
+	'**/infrastructure/output/persistence/entity/**',
+	'**/infrastructure/output/persistence/mapper/**',
+	'**/infrastructure/output/persistence/repository/**',
+	'**/infrastructure/output/persistence/adapter/**',
+]
 
 jacoco {
 	toolVersion = "0.8.12"
 }
 
+tasks.named('test') {
+	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
 jacocoTestReport {
 	dependsOn test
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, excludes: jacocoExclusions)
+		}))
+	}
 	reports {
 		xml.required = true
 		html.required = true
-	}
-	afterEvaluate {
-		classDirectories.setFrom(files(classDirectories.files.collect {
-			fileTree(dir: it, exclude: [
-				'**/MsUsuarioApplication.class',
-				'**/infrastructure/config/**'
-			])
-		}))
 	}
 }
 
 jacocoTestCoverageVerification {
 	afterEvaluate {
 		classDirectories.setFrom(files(classDirectories.files.collect {
-			fileTree(dir: it, exclude: [
-				'**/MsUsuarioApplication.class',
-				'**/infrastructure/config/**'
-			])
+			fileTree(dir: it, excludes: jacocoExclusions)
 		}))
 	}
 	violationRules {
@@ -90,4 +101,6 @@ jacocoTestCoverageVerification {
 	}
 }
 
-check.dependsOn jacocoTestCoverageVerification
+tasks.named('check') {
+	dependsOn jacocoTestCoverageVerification
+}

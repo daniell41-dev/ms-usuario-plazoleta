@@ -11,6 +11,8 @@ import com.plazoleta.ms_usuario.domain.ports.out.IUsuarioPersistencePort;
 import com.plazoleta.ms_usuario.infrastructure.config.security.JwtTokenProvider;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.plazoleta.ms_usuario.domain.constants.UsuarioConstantes;
+
 import java.time.LocalDate;
 import java.time.Period;
 
@@ -129,7 +131,7 @@ public class UsuarioUseCase implements IUsuarioServicePort {
      */
     private void validarMayoriaDeEdad(LocalDate fechaNacimiento) {
         int edad = Period.between(fechaNacimiento, LocalDate.now()).getYears();
-        if (edad < 18) {
+        if (edad < UsuarioConstantes.EDAD_MINIMA) {
             throw new MenorDeEdadException();
         }
     }
