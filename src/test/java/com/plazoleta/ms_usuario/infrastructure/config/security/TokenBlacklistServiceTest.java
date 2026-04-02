@@ -24,7 +24,6 @@ class TokenBlacklistServiceTest {
     @Test
     void estaInvalidado_cuandoTokenFueInvalidado_devuelveTrue() {
         String token = "token.a.invalidar";
-
         tokenBlacklistService.invalidar(token);
 
         assertTrue(tokenBlacklistService.estaInvalidado(token));
@@ -35,7 +34,6 @@ class TokenBlacklistServiceTest {
     @Test
     void invalidar_cuandoSeLlamaDoasVecesConElMismoToken_noLanzaExcepcion() {
         String token = "token.repetido";
-
         tokenBlacklistService.invalidar(token);
 
         assertDoesNotThrow(() -> tokenBlacklistService.invalidar(token));
@@ -44,16 +42,12 @@ class TokenBlacklistServiceTest {
 
     @Test
     void invalidar_cuandoSeInvalidanMultiplesTokens_todosQuedaronInvalidados() {
-        String token1 = "token.uno";
-        String token2 = "token.dos";
-        String token3 = "token.tres";
+        tokenBlacklistService.invalidar("token.uno");
+        tokenBlacklistService.invalidar("token.dos");
+        tokenBlacklistService.invalidar("token.tres");
 
-        tokenBlacklistService.invalidar(token1);
-        tokenBlacklistService.invalidar(token2);
-        tokenBlacklistService.invalidar(token3);
-
-        assertTrue(tokenBlacklistService.estaInvalidado(token1));
-        assertTrue(tokenBlacklistService.estaInvalidado(token2));
-        assertTrue(tokenBlacklistService.estaInvalidado(token3));
+        assertTrue(tokenBlacklistService.estaInvalidado("token.uno"));
+        assertTrue(tokenBlacklistService.estaInvalidado("token.dos"));
+        assertTrue(tokenBlacklistService.estaInvalidado("token.tres"));
     }
 }

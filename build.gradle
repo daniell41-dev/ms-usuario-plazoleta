@@ -31,7 +31,6 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	// JPA: permite mapear clases Java a tablas de base de datos
@@ -47,6 +46,11 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 }
 
+// Clases excluidas de la cobertura de Jacoco:
+// - Clases de arranque, configuración de Spring y seguridad (requieren contexto de aplicación)
+// - Modelos de dominio, puertos e interfaces (sin lógica propia)
+// - DTOs, entidades y repositorios (sin lógica de negocio)
+// - Mappers de persistencia e infraestructura de entrada
 def jacocoExclusions = [
 	'**/MsUsuarioApplication*',
 	'**/domain/model/**',

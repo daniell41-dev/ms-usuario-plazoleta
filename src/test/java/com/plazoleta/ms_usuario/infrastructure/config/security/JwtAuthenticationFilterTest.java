@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,7 +39,6 @@ class JwtAuthenticationFilterTest {
 
     @AfterEach
     void tearDown() {
-        // Limpiamos el contexto de seguridad entre tests para evitar contaminación
         SecurityContextHolder.clearContext();
     }
 
@@ -51,7 +51,7 @@ class JwtAuthenticationFilterTest {
         filter.doFilter(request, response, filterChain);
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain, times(1)).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
     }
 
     @Test
@@ -61,7 +61,7 @@ class JwtAuthenticationFilterTest {
         filter.doFilter(request, response, filterChain);
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain, times(1)).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
     }
 
     // ─── token válido ────────────────────────────────────────────────────────
@@ -78,8 +78,9 @@ class JwtAuthenticationFilterTest {
         filter.doFilter(request, response, filterChain);
 
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-        assertEquals("juan@correo.com", SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-        verify(filterChain, times(1)).doFilter(request, response);
+        assertEquals("juan@correo.com",
+                SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        verify(filterChain).doFilter(request, response);
     }
 
     @Test
@@ -110,7 +111,7 @@ class JwtAuthenticationFilterTest {
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
         verify(jwtTokenProvider, never()).validarToken(anyString());
-        verify(filterChain, times(1)).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
     }
 
     // ─── token inválido ───────────────────────────────────────────────────────
@@ -126,6 +127,6 @@ class JwtAuthenticationFilterTest {
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
         verify(jwtTokenProvider, never()).extraerCorreo(anyString());
-        verify(filterChain, times(1)).doFilter(request, response);
+        verify(filterChain).doFilter(request, response);
     }
 }

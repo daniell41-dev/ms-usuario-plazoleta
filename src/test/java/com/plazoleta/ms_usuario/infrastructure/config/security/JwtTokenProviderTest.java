@@ -10,7 +10,6 @@ class JwtTokenProviderTest {
 
     private JwtTokenProvider jwtTokenProvider;
 
-    // Mínimo 32 caracteres para HMAC-SHA256 (256 bits)
     private static final String SECRET_DE_PRUEBA = "clave-secreta-de-prueba-suficientemente-larga-32chars";
     private static final long EXPIRACION_NORMAL = 86400000L;
 
@@ -45,9 +44,7 @@ class JwtTokenProviderTest {
     void extraerCorreo_cuandoTokenEsValido_devuelveCorreoCorrecto() {
         String token = jwtTokenProvider.generarToken(1L, "juan@correo.com", "PROPIETARIO");
 
-        String correo = jwtTokenProvider.extraerCorreo(token);
-
-        assertEquals("juan@correo.com", correo);
+        assertEquals("juan@correo.com", jwtTokenProvider.extraerCorreo(token));
     }
 
     // ─── extraerRol ──────────────────────────────────────────────────────────
@@ -56,9 +53,7 @@ class JwtTokenProviderTest {
     void extraerRol_cuandoTokenEsValido_devuelveRolCorrecto() {
         String token = jwtTokenProvider.generarToken(1L, "juan@correo.com", "ADMINISTRADOR");
 
-        String rol = jwtTokenProvider.extraerRol(token);
-
-        assertEquals("ADMINISTRADOR", rol);
+        assertEquals("ADMINISTRADOR", jwtTokenProvider.extraerRol(token));
     }
 
     // ─── validarToken ────────────────────────────────────────────────────────
@@ -72,14 +67,11 @@ class JwtTokenProviderTest {
 
     @Test
     void validarToken_cuandoTokenEstaManipulado_devuelveFalse() {
-        String tokenManipulado = "esto.no.esUnToken";
-
-        assertFalse(jwtTokenProvider.validarToken(tokenManipulado));
+        assertFalse(jwtTokenProvider.validarToken("esto.no.esUnToken"));
     }
 
     @Test
     void validarToken_cuandoTokenEstaExpirado_devuelveFalse() {
-        // Expiración negativa → el token nace ya vencido
         ReflectionTestUtils.setField(jwtTokenProvider, "expiration", -1000L);
         String tokenExpirado = jwtTokenProvider.generarToken(1L, "juan@correo.com", "PROPIETARIO");
 
@@ -87,7 +79,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    void validarToken_cuandoTokenEstaFirmadoConOtroSecret_devuelveFalse() {
+    void validarToken_cuandoTokenFirmadoConOtroSecret_devuelveFalse() {
         JwtTokenProvider otroProvider = new JwtTokenProvider();
         ReflectionTestUtils.setField(otroProvider, "secret", "otro-secret-completamente-diferente-32chars-x");
         ReflectionTestUtils.setField(otroProvider, "expiration", EXPIRACION_NORMAL);
