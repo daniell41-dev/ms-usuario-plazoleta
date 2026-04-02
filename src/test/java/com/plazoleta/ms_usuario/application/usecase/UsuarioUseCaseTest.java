@@ -7,8 +7,8 @@ import com.plazoleta.ms_usuario.domain.exception.UsuarioNoEncontradoException;
 import com.plazoleta.ms_usuario.domain.exception.UsuarioYaExisteException;
 import com.plazoleta.ms_usuario.domain.model.Rol;
 import com.plazoleta.ms_usuario.domain.model.Usuario;
+import com.plazoleta.ms_usuario.domain.ports.out.IJwtTokenPort;
 import com.plazoleta.ms_usuario.domain.ports.out.IUsuarioPersistencePort;
-import com.plazoleta.ms_usuario.infrastructure.config.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +35,7 @@ class UsuarioUseCaseTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private JwtTokenProvider jwtTokenProvider;
+    private IJwtTokenPort jwtTokenPort;
 
     @InjectMocks
     private UsuarioUseCase usuarioUseCase;
@@ -45,29 +45,22 @@ class UsuarioUseCaseTest {
     @BeforeEach
     void setUp() {
         usuarioValido = new Usuario(
-                null,
-                "Juan",
-                "Pérez",
-                "12345678",
-                "+573001234567",
-                LocalDate.of(1990, 1, 1),
-                "juan@correo.com",
-                "clave123",
-                null
+                null, "Juan", "Pérez", "12345678", "+573001234567",
+                LocalDate.of(1990, 1, 1), "juan@correo.com", "clave123", null
         );
     }
 
     // ─── guardarPropietario: camino feliz ────────────────────────────────────
 
     @Test
-    void guardarPropietario_cuandoTodosLosDatosSonValidos_guardaCorrectamente() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo())).thenReturn(Optional.empty());
-        when(usuarioPersistencePort.existePorDocumento(usuarioValido.getDocumentoDeIdentidad())).thenReturn(false);
+    void guardarPropietario_cuandoTodosLosDatosSonValidos_guardaConRolPropietario() {
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.existePorDocumento(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("claveEncriptada");
 
         usuarioUseCase.guardarPropietario(usuarioValido);
 
-        verify(usuarioPersistencePort, times(1)).guardarUsuario(usuarioValido);
+        verify(usuarioPersistencePort).guardarUsuario(usuarioValido);
         assertEquals(Rol.PROPIETARIO, usuarioValido.getRol());
         assertEquals("claveEncriptada", usuarioValido.getClave());
     }
@@ -95,20 +88,19 @@ class UsuarioUseCaseTest {
                 LocalDate.now().minusYears(UsuarioConstantes.EDAD_MINIMA),
                 "juan@correo.com", "clave123", null
         );
-        when(usuarioPersistencePort.buscarPorCorreo(exactamente18.getCorreo())).thenReturn(Optional.empty());
-        when(usuarioPersistencePort.existePorDocumento(exactamente18.getDocumentoDeIdentidad())).thenReturn(false);
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.existePorDocumento(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("claveEncriptada");
 
-        usuarioUseCase.guardarPropietario(exactamente18);
-
-        verify(usuarioPersistencePort, times(1)).guardarUsuario(exactamente18);
+        assertDoesNotThrow(() -> usuarioUseCase.guardarPropietario(exactamente18));
+        verify(usuarioPersistencePort).guardarUsuario(exactamente18);
     }
 
-    // ─── guardarPropietario: unicidad ────────────────────────────────────────
+    // ─── guardarPropietario: correo duplicado ────────────────────────────────
 
     @Test
     void guardarPropietario_cuandoCorreoYaExiste_lanzaUsuarioYaExisteException() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo()))
+        when(usuarioPersistencePort.buscarPorCorreo(anyString()))
                 .thenReturn(Optional.of(usuarioValido));
 
         assertThrows(UsuarioYaExisteException.class,
@@ -117,10 +109,12 @@ class UsuarioUseCaseTest {
         verify(usuarioPersistencePort, never()).guardarUsuario(any());
     }
 
+    // ─── guardarPropietario: documento duplicado ─────────────────────────────
+
     @Test
     void guardarPropietario_cuandoDocumentoYaExiste_lanzaUsuarioYaExisteException() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo())).thenReturn(Optional.empty());
-        when(usuarioPersistencePort.existePorDocumento(usuarioValido.getDocumentoDeIdentidad())).thenReturn(true);
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.existePorDocumento(anyString())).thenReturn(true);
 
         assertThrows(UsuarioYaExisteException.class,
                 () -> usuarioUseCase.guardarPropietario(usuarioValido));
@@ -128,23 +122,26 @@ class UsuarioUseCaseTest {
         verify(usuarioPersistencePort, never()).guardarUsuario(any());
     }
 
-    // ─── guardarEmpleado ─────────────────────────────────────────────────────
+    // ─── guardarEmpleado: camino feliz ───────────────────────────────────────
 
     @Test
-    void guardarEmpleado_cuandoTodosLosDatosSonValidos_guardaCorrectamente() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo())).thenReturn(Optional.empty());
-        when(usuarioPersistencePort.existePorDocumento(usuarioValido.getDocumentoDeIdentidad())).thenReturn(false);
+    void guardarEmpleado_cuandoTodosLosDatosSonValidos_guardaConRolEmpleado() {
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.existePorDocumento(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("claveEncriptada");
 
         usuarioUseCase.guardarEmpleado(usuarioValido);
 
-        verify(usuarioPersistencePort, times(1)).guardarUsuario(usuarioValido);
+        verify(usuarioPersistencePort).guardarUsuario(usuarioValido);
         assertEquals(Rol.EMPLEADO, usuarioValido.getRol());
+        assertEquals("claveEncriptada", usuarioValido.getClave());
     }
+
+    // ─── guardarEmpleado: correo duplicado ───────────────────────────────────
 
     @Test
     void guardarEmpleado_cuandoCorreoYaExiste_lanzaUsuarioYaExisteException() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo()))
+        when(usuarioPersistencePort.buscarPorCorreo(anyString()))
                 .thenReturn(Optional.of(usuarioValido));
 
         assertThrows(UsuarioYaExisteException.class,
@@ -153,10 +150,12 @@ class UsuarioUseCaseTest {
         verify(usuarioPersistencePort, never()).guardarUsuario(any());
     }
 
+    // ─── guardarEmpleado: documento duplicado ────────────────────────────────
+
     @Test
     void guardarEmpleado_cuandoDocumentoYaExiste_lanzaUsuarioYaExisteException() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo())).thenReturn(Optional.empty());
-        when(usuarioPersistencePort.existePorDocumento(usuarioValido.getDocumentoDeIdentidad())).thenReturn(true);
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.existePorDocumento(anyString())).thenReturn(true);
 
         assertThrows(UsuarioYaExisteException.class,
                 () -> usuarioUseCase.guardarEmpleado(usuarioValido));
@@ -164,23 +163,26 @@ class UsuarioUseCaseTest {
         verify(usuarioPersistencePort, never()).guardarUsuario(any());
     }
 
-    // ─── guardarCliente ──────────────────────────────────────────────────────
+    // ─── guardarCliente: camino feliz ────────────────────────────────────────
 
     @Test
-    void guardarCliente_cuandoTodosLosDatosSonValidos_guardaCorrectamente() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo())).thenReturn(Optional.empty());
-        when(usuarioPersistencePort.existePorDocumento(usuarioValido.getDocumentoDeIdentidad())).thenReturn(false);
+    void guardarCliente_cuandoTodosLosDatosSonValidos_guardaConRolCliente() {
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.existePorDocumento(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("claveEncriptada");
 
         usuarioUseCase.guardarCliente(usuarioValido);
 
-        verify(usuarioPersistencePort, times(1)).guardarUsuario(usuarioValido);
+        verify(usuarioPersistencePort).guardarUsuario(usuarioValido);
         assertEquals(Rol.CLIENTE, usuarioValido.getRol());
+        assertEquals("claveEncriptada", usuarioValido.getClave());
     }
+
+    // ─── guardarCliente: correo duplicado ────────────────────────────────────
 
     @Test
     void guardarCliente_cuandoCorreoYaExiste_lanzaUsuarioYaExisteException() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo()))
+        when(usuarioPersistencePort.buscarPorCorreo(anyString()))
                 .thenReturn(Optional.of(usuarioValido));
 
         assertThrows(UsuarioYaExisteException.class,
@@ -189,10 +191,12 @@ class UsuarioUseCaseTest {
         verify(usuarioPersistencePort, never()).guardarUsuario(any());
     }
 
+    // ─── guardarCliente: documento duplicado ─────────────────────────────────
+
     @Test
     void guardarCliente_cuandoDocumentoYaExiste_lanzaUsuarioYaExisteException() {
-        when(usuarioPersistencePort.buscarPorCorreo(usuarioValido.getCorreo())).thenReturn(Optional.empty());
-        when(usuarioPersistencePort.existePorDocumento(usuarioValido.getDocumentoDeIdentidad())).thenReturn(true);
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.existePorDocumento(anyString())).thenReturn(true);
 
         assertThrows(UsuarioYaExisteException.class,
                 () -> usuarioUseCase.guardarCliente(usuarioValido));
@@ -203,7 +207,7 @@ class UsuarioUseCaseTest {
     // ─── obtenerRolUsuario ────────────────────────────────────────────────────
 
     @Test
-    void obtenerRolUsuario_cuandoUsuarioExiste_devuelveRol() {
+    void obtenerRolUsuario_cuandoUsuarioExiste_devuelveNombreDelRol() {
         usuarioValido.setRol(Rol.PROPIETARIO);
         when(usuarioPersistencePort.obtenerPorId(1L)).thenReturn(Optional.of(usuarioValido));
 
@@ -225,34 +229,37 @@ class UsuarioUseCaseTest {
     @Test
     void login_cuandoCredencialesSonValidas_devuelveToken() {
         usuarioValido.setRol(Rol.PROPIETARIO);
-        when(usuarioPersistencePort.buscarPorCorreo("juan@correo.com")).thenReturn(Optional.of(usuarioValido));
+        when(usuarioPersistencePort.buscarPorCorreo("juan@correo.com"))
+                .thenReturn(Optional.of(usuarioValido));
         when(passwordEncoder.matches("clave123", usuarioValido.getClave())).thenReturn(true);
-        when(jwtTokenProvider.generarToken(any(), anyString(), anyString())).thenReturn("token.jwt.generado");
+        when(jwtTokenPort.generarToken(any(), anyString(), anyString()))
+                .thenReturn("token.jwt.generado");
 
         String token = usuarioUseCase.login("juan@correo.com", "clave123");
 
         assertEquals("token.jwt.generado", token);
-        verify(jwtTokenProvider, times(1)).generarToken(any(), anyString(), anyString());
+        verify(jwtTokenPort).generarToken(any(), anyString(), anyString());
     }
 
     @Test
     void login_cuandoCorreoNoExiste_lanzaCredencialesInvalidasException() {
-        when(usuarioPersistencePort.buscarPorCorreo("noexiste@correo.com")).thenReturn(Optional.empty());
+        when(usuarioPersistencePort.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
 
         assertThrows(CredencialesInvalidasException.class,
                 () -> usuarioUseCase.login("noexiste@correo.com", "clave123"));
 
-        verify(jwtTokenProvider, never()).generarToken(any(), anyString(), anyString());
+        verify(jwtTokenPort, never()).generarToken(any(), anyString(), anyString());
     }
 
     @Test
     void login_cuandoClaveEsIncorrecta_lanzaCredencialesInvalidasException() {
-        when(usuarioPersistencePort.buscarPorCorreo("juan@correo.com")).thenReturn(Optional.of(usuarioValido));
+        when(usuarioPersistencePort.buscarPorCorreo("juan@correo.com"))
+                .thenReturn(Optional.of(usuarioValido));
         when(passwordEncoder.matches("claveIncorrecta", usuarioValido.getClave())).thenReturn(false);
 
         assertThrows(CredencialesInvalidasException.class,
                 () -> usuarioUseCase.login("juan@correo.com", "claveIncorrecta"));
 
-        verify(jwtTokenProvider, never()).generarToken(any(), anyString(), anyString());
+        verify(jwtTokenPort, never()).generarToken(any(), anyString(), anyString());
     }
 }

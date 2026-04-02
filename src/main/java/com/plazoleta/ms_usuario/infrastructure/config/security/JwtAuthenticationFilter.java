@@ -1,5 +1,6 @@
 package com.plazoleta.ms_usuario.infrastructure.config.security;
 
+import com.plazoleta.ms_usuario.domain.constants.UsuarioConstantes;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
